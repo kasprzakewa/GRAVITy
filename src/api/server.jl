@@ -47,19 +47,35 @@ catch e
     println("Error loading algorithms module: $e")
 end
 
+function is_allowed_function_call(expr, allowed_functions)
+    # Only allow expressions of the form: function_name(args...)
+    if !(expr isa Expr && expr.head == :call)
+        return false
+    end
+    func = expr.args[1]
+    if !(func isa Symbol)
+        return false
+    end
+    return string(func) in allowed_functions
+end
+
 function execute_julia_code(code::String)
     result = nothing
     output = ""
     error_msg = nothing
-    
+
     try
-        result = Core.eval(GLOBAL_CONTEXT, Meta.parse(code))
-        output = ""
-        
+        expr = Meta.parse(code)
+        # Only allow whitelisted function calls
+        if !is_allowed_function_call(expr, loaded_algorithms)
+            error_msg = "Only calls to allowed algorithms are permitted."
+        else
+            result = Core.eval(GLOBAL_CONTEXT, expr)
+            output = ""
+        end
     catch exec_error
         error_msg = string(exec_error)
     end
-    
     return Dict(
         "success" => error_msg === nothing,
         "error" => error_msg,
