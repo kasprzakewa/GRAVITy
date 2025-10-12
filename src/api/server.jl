@@ -107,7 +107,7 @@ function handle_reset(req::HTTP.Request)
         for name in names(GLOBAL_CONTEXT, all=true)
             if name != :eval && name != :include
                 try
-                    Core.eval(GLOBAL_CONTEXT, :($(Symbol(name)) = nothing))
+                    Core.eval(GLOBAL_CONTEXT, :($(Symbol(name)) = undef))
                 catch
                     # ignore errors when trying to reset built-in names
                 end
