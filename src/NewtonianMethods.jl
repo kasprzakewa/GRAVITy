@@ -9,10 +9,10 @@ using Plots
 
 import ..CommonUtils: μ, energy_integral_2d
 import ..CommonUtils: TestResult, create_plot, save_results_to_csv, benchmark_memory
-import ..CommonUtils: get_test_cases
+import ..CommonUtils: get_test_cases, generate_methods_summary
 
 export cr3bp_newtonian!
-export test_newtonian_method, run_newtonian_tests, generate_newtonian_summary
+export test_newtonian_method, run_newtonian_tests
 
 function cr3bp_newtonian!(du, u, p, t)
     μ = p
@@ -44,21 +44,17 @@ function solve_newtonian_problem(prob, method; dt=0.01)
     return solve(prob, method, dt=dt, adaptive=false)
 end
 
-function test_newtonian_method(method, method_name, test_case; dt_values=[0.01, 0.001, 0.0001])
+function test_newtonian_method(method, method_name, test_case; dt_values=[0.01])
     results = TestResult[]
     
-    println("Testing $method_name on case: $(test_case["name"])")
-    
     for dt in dt_values
-        println("  dt = $dt")
-        
         x0, y0 = test_case["x0"], test_case["y0"]
         vx0, vy0 = test_case["vx0"], test_case["vy0"]
         u0 = [x0, y0, vx0, vy0]
         tspan = (0.0, test_case["T_end"])
         
         prob = create_newtonian_problem(u0, tspan)
-        result = TestResult(method_name * "_dt_$dt", test_case["name"], dt, test_case["T_end"])
+        result = TestResult(method_name, test_case["name"], dt, test_case["T_end"])
         
         try
             mem_before = benchmark_memory()
@@ -92,9 +88,9 @@ function test_newtonian_method(method, method_name, test_case; dt_values=[0.01, 
                             "$method_name (dt=$dt, T=$(test_case["T_end"]), $(test_case["name"]))", "")
             
             if plt !== nothing
-                mkpath("results/newtonian_output")
-                filename = joinpath("results/newtonian_output", 
-                    "cr3bp_newtonian_$(method_name)_$(test_case["name"])_dt_$(replace(string(dt), "." => "_")).png")
+                mkpath("results/newtonian_methods")
+                filename = joinpath("results/newtonian_methods", 
+                    "$(method_name)_$(test_case["name"])_dt_$(replace(string(dt), "." => "_")).png")
                 try
                     savefig(plt, filename)
                 catch e
@@ -104,8 +100,9 @@ function test_newtonian_method(method, method_name, test_case; dt_values=[0.01, 
             
             push!(results, result)
             
-            println("    Max |ΔE| = $(result.max_energy_drift)")
-            println("    Time = $(result.execution_time)s")
+            @printf("    %-25s %-25s dt=%-8g T=%-8g Max|ΔE|=%-12.4e  Time=%.3fs\n", 
+                method, test_case["name"], dt, test_case["T_end"], 
+                result.max_energy_drift, result.execution_time)
             
         catch e
             println("    ERROR: $e")
@@ -118,26 +115,26 @@ function test_newtonian_method(method, method_name, test_case; dt_values=[0.01, 
 end
 
 function run_newtonian_tests()
-    println("="^80)
-    println("NEWTONIAN METHODS TESTING FOR CR3BP")
-    println("="^80)
+    println("\n" * "="^40)
+    println("NEWTONIAN METHODS")
+    println("="^40)
     
     methods = [
-        (:Euler, "Metoda Eulera"),
-        (:Midpoint, "Metoda punktu środkowego"),
-        (:RK4, "Metoda Rungego-Kutty 4. rzędu"),
-        (:Vern9, "Metoda Vernera 9. rzędu"),
-        (:DP8, "Metoda Dormanda-Prince'a 7. rzędu"),
-        (:AB5, "Metoda Adamsa-Bashfortha 5. rzędu")
+        (:Euler, "Euler method"),
+        (:Midpoint, "Midpoint method"),
+        (:RK4, "Runge-Kutta 4th order method"),
+        (:Vern9, "Verner's 9th order method"),
+        (:DP8, "Dormand-Prince 7th order method"),
+        (:AB5, "Adams-Bashforth 5th order method")
     ]
     
     test_cases = get_test_cases()
     all_results = TestResult[]
     
     for (method_symbol, method_name) in methods
-        println("\n" * "="^60)
+        println("\n" * "-"^40)
         println("METHOD: $method_name")
-        println("="^60)
+        println("-"^40)
         
         for test_case in test_cases
             case_results = test_newtonian_method(method_symbol, method_name, test_case)
@@ -145,71 +142,12 @@ function run_newtonian_tests()
         end
     end
     
-    mkpath("results/newtonian_output")
-    save_results_to_csv(all_results, joinpath("results/newtonian_output", "newtonian_methods_results.csv"))
+    mkpath("results/newtonian_methods")
+    save_results_to_csv(all_results, joinpath("results/newtonian_methods", "newtonian_methods_results.csv"))
     
-    generate_newtonian_summary(all_results)
+    generate_methods_summary(all_results, "Newtonian")
     
     return all_results
-end
-
-function generate_newtonian_summary(results::Vector{TestResult})
-    println("\n" * "="^80)
-    println("NEWTONIAN METHODS SUMMARY")
-    println("="^80)
-    
-    method_groups = Dict{String, Vector{TestResult}}()
-    
-    for result in results
-        base_method = split(result.method_name, "_dt_")[1]
-        if !haskey(method_groups, base_method)
-            method_groups[base_method] = TestResult[]
-        end
-        push!(method_groups[base_method], result)
-    end
-    
-    for (method, method_results) in method_groups
-        if isempty(method_results)
-            continue
-        end
-        
-        println("\n$method:")
-        println("-"^40)
-        
-        for case_name in unique([r.case_name for r in method_results])
-            case_results = filter(r -> r.case_name == case_name, method_results)
-            if !isempty(case_results)
-                best = argmin([r.max_energy_drift for r in case_results])
-                best_result = case_results[best]
-                println("  $case_name: Best |ΔE| = $(best_result.max_energy_drift) " *
-                       "(dt=$(best_result.dt), time=$(best_result.execution_time)s)")
-            end
-        end
-    end
-    
-    println("\n" * "="^40)
-    println("OVERALL RANKING BY ENERGY CONSERVATION")
-    println("="^40)
-    
-    best_results = TestResult[]
-    for (method, method_results) in method_groups
-        for case_name in unique([r.case_name for r in method_results])
-            case_results = filter(r -> r.case_name == case_name, method_results)
-            if !isempty(case_results) && all(isfinite(r.max_energy_drift) for r in case_results)
-                best_idx = argmin([r.max_energy_drift for r in case_results])
-                push!(best_results, case_results[best_idx])
-            end
-        end
-    end
-
-    if !isempty(best_results)
-        sorted_results = sort(best_results, by=r -> r.max_energy_drift)
-        
-        for (i, result) in enumerate(sorted_results[1:min(10, length(sorted_results))])
-            method_clean = split(result.method_name, "_dt_")[1]
-            println("$i. $method_clean ($(result.case_name)): |ΔE| = $(result.max_energy_drift)")
-        end
-    end
 end
 
 end
