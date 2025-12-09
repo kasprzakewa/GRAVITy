@@ -1,3 +1,10 @@
+"""
+Analysis and visualization of numerical methods test results.
+
+Generates comparison plots (fixed T, fixed dt) and heatmaps for energy drift
+and performance metrics across different methods and test cases.
+"""
+
 using CSV
 using DataFrames
 using Plots
@@ -7,6 +14,7 @@ using Printf
 gr()
 default(fontfamily="Computer Modern", framestyle=:box)
 
+"""Load test results from CSV file."""
 function load_results(filepath::String)
     if !isfile(filepath)
         @warn "File does not exist: $filepath"
@@ -15,6 +23,7 @@ function load_results(filepath::String)
     return CSV.read(filepath, DataFrame)
 end
 
+"""Parse test case name to energy level category."""
 function parse_test_case(test_case)
     test_case_str = String(test_case)
     
@@ -29,10 +38,12 @@ function parse_test_case(test_case)
     end
 end
 
+"""Extract base method name without underscores."""
 function get_base_method_name(method_name)
     return replace(String(method_name), "_" => " ")
 end
 
+"""Generate plots for fixed integration time T, varying dt."""
 function plot_fixed_T(df::DataFrame, energy_level::String, T::Float64, output_dir::String, 
                       metric::Symbol, metric_label::String;
                       exclude_methods::Vector{String}=String[])
@@ -82,6 +93,7 @@ function plot_fixed_T(df::DataFrame, energy_level::String, T::Float64, output_di
     println("Saved: $filename")
 end
 
+"""Generate plots for fixed timestep dt, varying final time T."""
 function plot_fixed_dt(df::DataFrame, energy_level::String, dt::Float64, output_dir::String, 
                        metric::Symbol, metric_label::String;
                        exclude_methods::Vector{String}=String[])
@@ -130,6 +142,7 @@ function plot_fixed_dt(df::DataFrame, energy_level::String, dt::Float64, output_
     println("Saved: $filename")
 end
 
+"""Create heatmap comparing all methods and variants for given T."""
 function create_heatmap(df::DataFrame, T::Float64, output_dir::String, 
                         metric::Symbol, metric_label::String;
                         exclude_methods::Vector{String}=String[],
@@ -216,6 +229,7 @@ function create_heatmap(df::DataFrame, T::Float64, output_dir::String,
     println("Saved: $filename")
 end
 
+"""Process test results and generate all plots for specified method type."""
 function process_results(csv_file::String, output_base_dir::String, method_type::String;
                         exclude_methods::Vector{String}=String[], 
                         exclude_variants::Vector{String}=String[],
@@ -295,6 +309,7 @@ function process_results(csv_file::String, output_base_dir::String, method_type:
     println("\n=== Completed processing: $method_type $(isempty(subfolder) ? "" : "($subfolder)") ===")
 end
 
+"""Main function to analyze and plot all results."""
 function analyze_and_plot()
     println("=== Numerical methods results analysis ===\n")
     

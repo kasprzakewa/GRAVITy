@@ -1,3 +1,8 @@
+"""Newtonian formulation and standard integrators for PCR3BP.
+
+Implements classical integration methods including Euler, Runge-Kutta,
+and Adams-Bashforth.
+"""
 module NewtonianMethods
 
 using DifferentialEquations: ODEProblem, solve, Euler, Midpoint, RK4, Vern9, DP8, AB5
@@ -14,6 +19,7 @@ import ..CommonUtils: get_test_cases, generate_methods_summary
 export cr3bp_newtonian!
 export test_newtonian_method, run_newtonian_tests
 
+"""Equations of motion for PCR3BP in newtonian formulation."""
 function cr3bp_newtonian!(du, u, p, t)
     μ = p
     x, y, vx, vy = u
@@ -32,18 +38,22 @@ function cr3bp_newtonian!(du, u, p, t)
     du[4] = -2*vx + y + ay_grav         
 end
 
+"""Create ODE problem for PCR3BP in newtonian form."""
 function create_newtonian_problem(u0, tspan)
     return ODEProblem(cr3bp_newtonian!, u0, tspan, μ)
 end
 
+"""Create ODE problem with custom dynamics function."""
 function create_newtonian_problem_with_function(u0, tspan, f)
     return ODEProblem(f, u0, tspan, μ)
 end
 
+"""Solve newtonian ODE problem with specified method and timestep."""
 function solve_newtonian_problem(prob, method; dt=0.01)
     return solve(prob, method, dt=dt, adaptive=false)
 end
 
+"""Test single newtonian method on given test case."""
 function test_newtonian_method(method, method_name, test_case; dt_values=[0.01])
     results = TestResult[]
     
@@ -114,6 +124,7 @@ function test_newtonian_method(method, method_name, test_case; dt_values=[0.01])
     return results
 end
 
+"""Run all newtonian method tests and generate summary."""
 function run_newtonian_tests()
     println("\n" * "="^40)
     println("NEWTONIAN METHODS")

@@ -1,3 +1,9 @@
+"""
+GRAVITy - Gravitational Restricted Astrodynamics Variational Integration Toolkit
+Main entry point for running numerical integration tests, trajectory optimization,
+and result analysis for the Planar Circular Restricted Three-Body Problem.
+"""
+
 include("src/CommonUtils.jl")
 include("src/NewtonianMethods.jl")
 include("src/HamiltonianMethods.jl")
@@ -12,6 +18,7 @@ include("utils/run_tests.jl")
 include("utils/run_trajectory_optimization.jl")
 include("utils/analyze_and_plot_results.jl")
 
+"""Display usage information and available commands."""
 function display_usage()
     println("""
 Usage:
@@ -38,6 +45,7 @@ Examples:
 """)
 end
 
+"""Main command-line interface handler for GRAVITy toolkit."""
 function main_gravity(args=ARGS)
     if isempty(args)
         display_usage()

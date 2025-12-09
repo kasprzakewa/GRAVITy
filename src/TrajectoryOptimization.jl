@@ -1,3 +1,9 @@
+"""
+Trajectory optimization using invariant manifolds.
+
+Computes stable/unstable manifolds of Lyapunov orbits and finds optimal
+transfers between HEO and Lyapunov orbits with minimal delta-V.
+"""
 module TrajectoryOptimization
 
 using CSV, DataFrames
@@ -14,8 +20,9 @@ export load_orbit_data, compute_stm, extract_manifold_eigenvectors
 export generate_manifold_initial_conditions, integrate_manifolds
 export find_optimal_heo_intersection
 export build_orbit_kdtree_weighted, find_optimal_lyapunov_entry_weighted, find_optimal_lyapunov_exit_weighted
-export visualize_trajectory
+export visualize_trajectory, plot_orbit, plot_manifolds
 
+"""Load orbit data from CSV file."""
 function load_orbit_data(filepath::String)
     df = CSV.File(filepath) |> DataFrame
     x  = df[!, Symbol("X (LU)")]
@@ -27,6 +34,7 @@ function load_orbit_data(filepath::String)
     return x, y, vx, vy, t
 end
 
+"""PCR3BP equations with state transition matrix (STM) propagation."""
 function pcr3bp_with_stm!(du, u, μ, t)
     x, y, vx, vy = u[1:4]
     r1, r2 = r1_r2(x, y, μ)
@@ -62,6 +70,7 @@ function pcr3bp_with_stm!(du, u, μ, t)
     du[5:end] .= reshape(dSTM, 16)
 end
 
+"""Compute state transition matrix and eigenvalues/eigenvectors."""
 function compute_stm(x0, y0, vx0, vy0, T; μ=μ)
     X0 = [x0, y0, vx0, vy0]
     STM0 = Matrix(I, 4, 4)
@@ -77,6 +86,7 @@ function compute_stm(x0, y0, vx0, vy0, T; μ=μ)
     return STM_T, eigen_vals, eigen_vecs
 end
 
+"""Extract stable and unstable eigenvectors from STM."""
 function extract_manifold_eigenvectors(eigen_vals, eigen_vecs)
     idx_unstable = argmax(abs.(eigen_vals))
     v_unstable = eigen_vecs[:, idx_unstable]
@@ -87,6 +97,7 @@ function extract_manifold_eigenvectors(eigen_vals, eigen_vecs)
     return v_unstable, v_stable
 end
 
+"""Generate initial conditions for manifolds by perturbing orbit points."""
 function generate_manifold_initial_conditions(orbit_points, v_unstable, v_stable, epsilon=1e-4)
     initial_unstable_pos = [point .+ epsilon * real(v_unstable[1:4]) for point in orbit_points]
     initial_unstable_neg = [point .- epsilon * real(v_unstable[1:4]) for point in orbit_points]
@@ -97,6 +108,7 @@ function generate_manifold_initial_conditions(orbit_points, v_unstable, v_stable
     return initial_unstable_pos, initial_unstable_neg, initial_stable_pos, initial_stable_neg
 end
 
+"""Integrate manifold trajectories forward or backward in time."""
 function integrate_manifolds(initial_conditions, T, manifold_periods=5.0, forward=true)
     solutions = []
     
@@ -112,6 +124,7 @@ function integrate_manifolds(initial_conditions, T, manifold_periods=5.0, forwar
     return solutions
 end
 
+"""Build KD-tree with weighted position/velocity for efficient nearest-neighbor search."""
 function build_orbit_kdtree_weighted(orbit_x, orbit_y, orbit_vx, orbit_vy; pos_weight=100.0)
     M = length(orbit_x)
     
@@ -126,6 +139,7 @@ function build_orbit_kdtree_weighted(orbit_x, orbit_y, orbit_vx, orbit_vy; pos_w
     return KDTree(data)
 end
 
+"""Find optimal entry point from stable manifold to Lyapunov orbit."""
 function find_optimal_lyapunov_entry_weighted(stable_sol, orbit_kdtree, 
                                               orbit_x, orbit_y, orbit_vx, orbit_vy;
                                               pos_weight=100.0, k_nearest=6, pos_tolerance=1e-3)
@@ -166,6 +180,7 @@ function find_optimal_lyapunov_entry_weighted(stable_sol, orbit_kdtree,
     return min_dv, min_manifold_position, min_orbit_position, total_checks
 end
 
+"""Find optimal exit point from Lyapunov orbit to unstable manifold."""
 function find_optimal_lyapunov_exit_weighted(unstable_solutions, orbit_kdtree,
                                              orbit_x, orbit_y, orbit_vx, orbit_vy, R_HEO_LU;
                                              pos_weight=100.0, k_nearest=6, pos_tolerance=1e-3)
@@ -228,6 +243,7 @@ function find_optimal_lyapunov_exit_weighted(unstable_solutions, orbit_kdtree,
     return min_dv_global, best_manifold_idx, best_manifold_position, best_orbit_position, valid_manifolds, total_checks
 end
 
+"""Find optimal intersection point between manifold and HEO orbit."""
 function find_optimal_heo_intersection(sol, R_HEO_LU; tolerance=0.01)
     min_dv = Inf
     min_dv_position = nothing
@@ -256,6 +272,7 @@ function find_optimal_heo_intersection(sol, R_HEO_LU; tolerance=0.01)
     return min_dv, min_dv_position, intersection_count
 end
 
+"""Visualize complete transfer trajectory with manifolds and key points."""
 function visualize_trajectory(stable_solutions, unstable_solutions, trajectory_plan, 
                              R_earth_LU, R_HEO_LU, orbit_data=nothing)
     p = plot(
@@ -357,6 +374,68 @@ function visualize_trajectory(stable_solutions, unstable_solutions, trajectory_p
     scatter!(p, [exit[1]], [exit[2]], 
         color=:red, markersize=6, markerstrokecolor=:black, markerstrokewidth=2, 
         label="Unstable manifold exit point")
+    
+    return p
+end
+
+"""Plot stable and unstable manifolds."""
+function plot_manifolds(stable_solutions, unstable_solutions)
+    
+    p = plot(
+        xlabel = "X (LU)",
+        ylabel = "Y (LU)",
+        xlims = (0.75, 0.9),
+        ylims = (-0.1, 0.1),
+        size = (900, 850),
+        aspect_ratio = :equal,
+        grid = true,
+        legend = :outertopright
+    )
+    
+    for (idx, sol) in enumerate(unstable_solutions)
+        xs = [state[1] for state in sol.u]
+        ys = [state[2] for state in sol.u]
+        plot!(p, xs, ys, 
+              color=:red, linewidth=1,
+              label=(idx == 1 ? "Unstable manifolds" : false))
+    end
+    
+    for (idx, sol) in enumerate(stable_solutions)
+        xs = [state[1] for state in sol.u]
+        ys = [state[2] for state in sol.u]
+        plot!(p, xs, ys, 
+              color=:limegreen, linewidth=1,
+              label=(idx == 1 ? "Stable manifolds" : false))
+    end
+    
+    return p
+end
+
+"""Plot Lyapunov orbit from CSV file."""
+function plot_orbit(filepath::String)
+    
+    df = CSV.File(filepath) |> DataFrame
+    
+    x = df[!, Symbol("X (LU)")]
+    y = df[!, Symbol("Y (LU)")]
+    
+    p = plot(
+        x, y,
+        label = "Orbita Lapunowa",
+        linewidth = 3,
+        color = :maroon4,
+        xlabel = "X (LU)",
+        ylabel = "Y (LU)",
+        size = (800, 750),
+        aspect_ratio = :equal,
+        grid = true,
+    )
+    
+    lagrange_points = find_lagrange_points()
+    L1_pos = lagrange_points["L1"]
+    scatter!(p, [L1_pos[1]], [L1_pos[2]], 
+        marker=:star, color=:gold, markersize=8, 
+        label="Punkt L1")
     
     return p
 end

@@ -1,6 +1,14 @@
+"""
+Comprehensive test runner for newtonian and hamiltonian methods.
+
+Executes all numerical integration methods on various test cases and generates
+comparative analysis of energy conservation and performance.
+"""
+
 using Dates
 using ..CommonUtils: get_test_cases, TestResult, save_results_to_csv
 
+"""Run all newtonian and hamiltonian method tests with analysis."""
 function run_comprehensive_tests()
     println("="^100)
     println("PCR3BP NUMERICAL METHODS TESTING")
@@ -36,11 +44,12 @@ function run_comprehensive_tests()
     return all_results
 end
 
-
+"""Get current timestamp as string."""
 function get_timestamp()
     return string(Dates.now())
 end
 
+"""Generate comparison between newtonian and hamiltonian methods."""
 function generate_comprehensive_analysis(newtonian_results, hamiltonian_results)
     println("\nPERFORMANCE COMPARISON:")
     println("-"^60)
@@ -119,14 +128,15 @@ function generate_comprehensive_analysis(newtonian_results, hamiltonian_results)
 
 end
 
+"""Main entry point with command-line argument handling."""
 function main_tests()
     args = ARGS
     
     if "--newtonian" in args
-        println("Running Newtonian methods only...")
+        println("Running newtonian methods only...")
         run_newtonian_tests()
     elseif "--hamiltonian" in args
-        println("Running Hamiltonian methods only...")
+        println("Running hamiltonian methods only...")
         run_hamiltonian_tests()
     else
         println("Running comprehensive tests...")

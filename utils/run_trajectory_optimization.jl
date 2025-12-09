@@ -1,3 +1,10 @@
+"""
+Trajectory optimization example using invariant manifolds.
+
+Computes optimal transfer trajectory between HEO and Lyapunov orbit via
+stable/unstable manifolds, minimizing total delta-V requirement.
+"""
+
 include("../src/CommonUtils.jl")
 include("../src/NewtonianMethods.jl")
 include("../src/HamiltonianMethods.jl")
@@ -7,9 +14,10 @@ using .TrajectoryOptimization: load_orbit_data, compute_stm, extract_manifold_ei
                                 generate_manifold_initial_conditions, integrate_manifolds,
                                 find_optimal_heo_intersection, build_orbit_kdtree_weighted,
                                 find_optimal_lyapunov_entry_weighted, find_optimal_lyapunov_exit_weighted,
-                                visualize_trajectory
+                                visualize_trajectory, plot_orbit, plot_manifolds
 using Plots: savefig
 
+"""Execute full trajectory optimization workflow and generate visualizations."""
 function run_trajectory_optimization_example()
     println("="^80)
     println("TRAJECTORY OPTIMIZATION FOR EARTH-MOON SYSTEM")
@@ -130,15 +138,23 @@ function run_trajectory_optimization_example()
             trajectory_plan, R_earth_LU, R_HEO_LU,
             (x, y)
         )
+
+        p_orbit = plot_orbit(orbit_file)
+        p_manifolds = plot_manifolds(stable_solutions, unstable_solutions)
         
         mkpath("results/trajectory_optimization")
         savefig(p, "results/trajectory_optimization/optimal_trajectory.png")
+        savefig(p_orbit, "results/trajectory_optimization/lyapunov_orbit.png")
+        savefig(p_manifolds, "results/trajectory_optimization/manifolds.png")
         println("Visualization saved to: results/trajectory_optimization/optimal_trajectory.png\n")
+        println("Lyapunov orbit plot saved to: results/trajectory_optimization/lyapunov_orbit.png\n")
+        println("Manifolds plot saved to: results/trajectory_optimization/manifolds.png\n")
     catch e
         println("Failed to generate visualization: $e\n")
     end
 end
 
+"""Main entry point with error handling."""
 function main_trajectory()
     try
         run_trajectory_optimization_example()

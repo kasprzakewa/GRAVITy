@@ -1,3 +1,8 @@
+"""Common utilities for PCR3BP analysis.
+
+Provides shared functions for coordinate transformations, energy calculations,
+test case generation, plotting, and result management.
+"""
 module CommonUtils
 
 using LinearAlgebra
@@ -21,18 +26,21 @@ function r1_r2(x, y, μ=μ)
     return r1, r2
 end
 
+"""Effective potential in the rotating frame."""
 function u_eff(x, y, μ=μ)
     r1, r2 = r1_r2(x, y, μ)
     U_eff = -(1 - μ)/r1 - μ/r2 - 0.5*(x^2 + y^2)
     return U_eff
 end
 
+"""Energy integral in 2D (kinetic + potential)."""
 function energy_integral_2d(x, y, vx, vy, μ=μ)
     potential = u_eff(x, y, μ)
     kinetic = 0.5 * (vx^2 + vy^2)
     return kinetic + potential
 end
 
+"""Energy integral in Hamiltonian formulation."""
 function energy_integral_hamiltonian(q, p, μ=μ)
     x, y = q
     px, py = p
@@ -41,6 +49,7 @@ function energy_integral_hamiltonian(q, p, μ=μ)
     return energy_integral_2d(x, y, vx, vy, μ)
 end
 
+"""Convert Newtonian coordinates to Hamiltonian (q, p)."""
 function newtonian_to_hamiltonian(u)
     x, y, vx, vy = u
     px = vx - y
@@ -48,6 +57,7 @@ function newtonian_to_hamiltonian(u)
     return ([x, y], [px, py])
 end
 
+"""Convert Hamiltonian coordinates (q, p) to Newtonian."""
 function hamiltonian_to_newtonian(q, p)
     x, y = q
     px, py = p
@@ -56,6 +66,7 @@ function hamiltonian_to_newtonian(q, p)
     return [x, y, vx, vy]
 end
 
+"""Compute approximate positions of all five Lagrange points."""
 function find_lagrange_points(μ=μ)
     l1_x = 1 - (μ/3)^(1/3)
     l2_x = 1 + (μ/3)^(1/3)
@@ -74,6 +85,7 @@ function find_lagrange_points(μ=μ)
     )
 end
 
+"""Generate test cases for numerical methods with various energy levels."""
 function get_test_cases()
     test_cases = []
     T_end_values = [
@@ -121,6 +133,7 @@ function get_test_cases()
     return test_cases
 end
 
+"""Create trajectory and energy drift plots."""
 function create_plot(x_traj, y_traj, t_vals, energy_drift, method_name, method_case)
     p1 = plot(x_traj, y_traj, 
         label="Trajectory",
@@ -165,6 +178,7 @@ function create_plot(x_traj, y_traj, t_vals, energy_drift, method_name, method_c
     return combined
 end
 
+"""Store test results including energy drift and performance metrics."""
 mutable struct TestResult
     method_name::String
     case_name::String
@@ -182,6 +196,7 @@ mutable struct TestResult
     end
 end
 
+"""Save test results to CSV file."""
 function save_results_to_csv(results::Vector{TestResult}, filename::String)  
     df = DataFrame(
         method=String[],
@@ -215,6 +230,7 @@ function save_results_to_csv(results::Vector{TestResult}, filename::String)
     println("Results saved to $filename")
 end
 
+"""Save test results to text file."""
 function save_results_to_txt(results::Vector{TestResult}, filename::String)
     open(filename, "w") do f
         write(f, "# CR3BP Numerical Methods Test Results\n")
@@ -227,11 +243,13 @@ function save_results_to_txt(results::Vector{TestResult}, filename::String)
     println("Results saved to $filename")
 end
 
+"""Get current memory usage for benchmarking."""
 function benchmark_memory()
     GC.gc()
     return Base.gc_bytes()
 end
 
+"""Generate and print summary statistics for numerical methods."""
 function generate_methods_summary(results::Vector{TestResult}, method_type::String)
     println("\n" * "="^80)
     println("$(uppercase(method_type)) METHODS SUMMARY")

@@ -1,3 +1,8 @@
+"""Hamiltonian formulation and symplectic integrators for PCR3BP.
+
+Implements various symplectic methods including Gauss, Lobatto, and explicit
+partitioned Runge-Kutta methods.
+"""
 module HamiltonianMethods
 
 using GeometricIntegrators: GeometricIntegrator, integrate, HODEProblem, 
@@ -19,12 +24,14 @@ export create_hamiltonian_problem, integrate_hamiltonian_method
 export test_hamiltonian_method
 export run_hamiltonian_tests
 
+"""Compute gradient of hamiltonian with respect to momentum p."""
 function grad_p_H(q, p)
     x, y = q
     px, py = p
     return [px + y, py - x]
 end
 
+"""Compute gradient of hamiltonian with respect to position q."""
 function grad_q_H(q, p; μ=μ)
     x, y = q
     px, py = p
@@ -37,15 +44,18 @@ function grad_q_H(q, p; μ=μ)
     return [py - x - dUx, -px - y - dUy]
 end
 
+"""Velocity field for hamiltonian system."""
 function vfield(v, t, q, p, params)
     v[1], v[2] = grad_p_H(q, p)
 end
 
+"""Force field for hamiltonian system."""
 function ffield(f, t, q, p, params)
     μ = params.μ
     f[1], f[2] = grad_q_H(q, p; μ=μ)
 end
 
+"""Hamiltonian of the system."""
 function hamiltonian_function(t, q, p, params)
     x, y = q
     px, py = p
@@ -58,12 +68,14 @@ function hamiltonian_function(t, q, p, params)
     return T + U
 end
 
+"""Create hamiltonian ODE problem for integration."""
 function create_hamiltonian_problem(q0, p0, tspan, dt; μ=μ)
     params = (μ=μ,)
     prob = HODEProblem(vfield, ffield, hamiltonian_function, tspan, dt, q0, p0; parameters=params)
     return prob
 end
 
+"""Select and configure integrator for specified method."""
 function get_integrator(prob, method_function::String)
     newton_solver = SimpleSolvers.Newton()
     
@@ -104,12 +116,14 @@ function get_integrator(prob, method_function::String)
     end
 end
 
+"""Integrate hamiltonian problem using specified method."""
 function integrate_hamiltonian_method(prob, method_function::String)
     integrator = get_integrator(prob, method_function)
     sol = integrate(integrator)
     return sol
 end
 
+"""Test single hamiltonian method on given test case."""
 function test_hamiltonian_method(method_function, method_name, test_case; dt_values=[0.01])
     results = TestResult[]
     
@@ -198,6 +212,7 @@ function test_hamiltonian_method(method_function, method_name, test_case; dt_val
     return results
 end
 
+"""Run all hamiltonian method tests and generate summary."""
 function run_hamiltonian_tests()
     separable_methods = [
         ("ERK2", "Explicit Runge-Kutta method with Heun2 tableau")
@@ -257,7 +272,5 @@ function run_hamiltonian_tests()
     
     return all_results
 end
-
-
 
 end
