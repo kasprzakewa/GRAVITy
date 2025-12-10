@@ -135,7 +135,7 @@ function run_newtonian_tests()
         (:Midpoint, "Midpoint method"),
         (:RK4, "Runge-Kutta 4th order method"),
         (:Vern9, "Verner's 9th order method"),
-        (:DP8, "Dormand-Prince 7th order method"),
+        (:DP8, "Dormand-Prince 8th order method"),
         (:AB5, "Adams-Bashforth 5th order method")
     ]
     

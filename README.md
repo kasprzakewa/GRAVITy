@@ -60,7 +60,7 @@ $$
 
 ### Key Features
 
-- **Newtonian Methods**: Euler, Midpoint, RK4, Verner9 (9th order), Dormand-Prince 8 (7th/8th order), Adams-Bashforth 5
+- **Newtonian Methods**: Euler, Midpoint, RK4, Verner9 (9th order), Dormand-Prince 8 (8th order), Adams-Bashforth 5
 - **Hamiltonian Methods**: Gauss-Legendre collocation (symplectic), Lobatto IIIA-IIIB pairs, Explicit Partitioned Runge-Kutta (EPRK)
 - **Energy Conservation Analysis**: Automated testing across multiple energy levels and integration parameters
 - **Trajectory Optimization**: HEO-to-Lyapunov orbit transfers via invariant manifolds
@@ -179,14 +179,14 @@ NEWTONIAN METHODS SUMMARY
 Verner's 9th order method:
   E < E_L1: Best |ΔE| = 2.44e-15 (dt=0.01, time=2.88s)
   
-Dormand-Prince 7th order method:
+Dormand-Prince 8th order method:
   E < E_L1: Best |ΔE| = 6.88e-15 (dt=0.01, time=2.63s)
 
 OVERALL RANKING BY ENERGY CONSERVATION
 ========================================
 1. Verner's 9th order method (E < E_L1): |ΔE| = 2.44e-15
 2. Verner's 9th order method (E_L1 < E < E_L2): |ΔE| = 2.66e-15
-3. Dormand-Prince 7th order method (E_L1 < E < E_L2): |ΔE| = 6.44e-15
+3. Dormand-Prince 8th order method (E_L1 < E < E_L2): |ΔE| = 6.44e-15
 ...
 ```
 
