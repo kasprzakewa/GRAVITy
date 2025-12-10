@@ -54,7 +54,7 @@ function solve_newtonian_problem(prob, method; dt=0.01)
 end
 
 """Test single newtonian method on given test case."""
-function test_newtonian_method(method, method_name, test_case; dt_values=[0.01])
+function test_newtonian_method(method, method_name, test_case; dt_values=[0.01, 0.001, 0.0001])
     results = TestResult[]
     
     for dt in dt_values

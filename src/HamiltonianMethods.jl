@@ -124,7 +124,7 @@ function integrate_hamiltonian_method(prob, method_function::String)
 end
 
 """Test single hamiltonian method on given test case."""
-function test_hamiltonian_method(method_function, method_name, test_case; dt_values=[0.01])
+function test_hamiltonian_method(method_function, method_name, test_case; dt_values=[0.01, 0.001, 0.0001])
     results = TestResult[]
     
     for dt in dt_values

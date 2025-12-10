@@ -90,8 +90,8 @@ function get_test_cases()
     test_cases = []
     T_end_values = [
         10.0, 
-        # 50.0, 
-        # 100.0
+        50.0, 
+        100.0
     ]
 
     for T_end in T_end_values
@@ -106,29 +106,29 @@ function get_test_cases()
         ))
     end
 
-    # for T_end in T_end_values
-    #     push!(test_cases, Dict(
-    #         "name" => "E_L1 < E < E_L2",
-    #         "x0" => 0.8,
-    #         "y0" => 0.0,
-    #         "vx0" => 0.0,
-    #         "vy0" => 0.15,
-    #         "description" => "Quasi-periodic, E_L1 < E < E_L2",
-    #         "T_end" => T_end
-    #     ))
-    # end
+    for T_end in T_end_values
+        push!(test_cases, Dict(
+            "name" => "E_L1 < E < E_L2",
+            "x0" => 0.8,
+            "y0" => 0.0,
+            "vx0" => 0.0,
+            "vy0" => 0.15,
+            "description" => "Quasi-periodic, E_L1 < E < E_L2",
+            "T_end" => T_end
+        ))
+    end
 
-    # for T_end in T_end_values
-    #     push!(test_cases, Dict(
-    #         "name" => "E_L4 < E",
-    #         "x0" => 0.5078494144,
-    #         "y0" => 0.8560254038,
-    #         "vx0" => -0.05,         
-    #         "vy0" => 0.3,
-    #         "description" => "High energy trajectory exploring L4 region, E > E_L4",
-    #         "T_end" => T_end
-    #     ))
-    # end
+    for T_end in T_end_values
+        push!(test_cases, Dict(
+            "name" => "E_L4 < E",
+            "x0" => 0.5078494144,
+            "y0" => 0.8560254038,
+            "vx0" => -0.05,         
+            "vy0" => 0.3,
+            "description" => "High energy trajectory exploring L4 region, E > E_L4",
+            "T_end" => T_end
+        ))
+    end
 
     return test_cases
 end
@@ -171,7 +171,7 @@ function create_plot(x_traj, y_traj, t_vals, energy_drift, method_name, method_c
         xlabel="Time",
         ylabel="ΔE",
         color=:maroon4,
-        title="Energy conservation",
+        title="Energy drift",
     )
     
     combined = plot(p1, p2, layout=(2,1), size=(900, 800))
